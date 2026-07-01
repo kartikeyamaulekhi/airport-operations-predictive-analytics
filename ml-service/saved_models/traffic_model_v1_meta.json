@@ -1,0 +1,9 @@
+{
+  "mae": 967.88,
+  "mape_pct": 3.7264,
+  "train_rows": 2192,
+  "holdout_days": 90,
+  "date_min": "2019-01-01",
+  "date_max": "2024-12-31",
+  "model_version": "v1"
+}
