@@ -5,11 +5,12 @@ joblib = __import__('joblib')
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_auc_score
+from app.config import Config
 
 def train_pipeline():
-    print(" Loading data and stripping leaks...")
-    df = pd.read_csv("data/flight_delay_clean.csv")
-    df["high_delay"] = (df["delay_rate"] > 0.20).astype(int)
+    print(" Loading data from configured path...")
+    df = pd.read_csv(Config.DATA_PATH)
+    df["high_delay"] = (df["delay_rate"] > Config.DELAY_THRESHOLD).astype(int)
     target_col = "high_delay"
     leak_cols = ["arr_del15", "delay_rate", "cancellation_rate", "diversion_rate", "carrier_ct_share", "weather_ct_share", "nas_ct_share", "security_ct_share", "late_aircraft_ct_share"]
     X = df.select_dtypes(include=[np.number]).drop(columns=[target_col] + leak_cols, errors="ignore")
@@ -23,9 +24,9 @@ def train_pipeline():
     print("\n=== Realistic Evaluation Metrics ===")
     print(classification_report(y_test, preds))
     print("ROC-AUC Score: " + str(round(roc_auc_score(y_test, probs), 4)))
-    os.makedirs("saved_models", exist_ok=True)
-    joblib.dump(model, "saved_models/delay_model_v1.pkl")
-    print("\n[SUCCESS] Honest, leak-free model saved!")
+    os.makedirs(os.path.dirname(Config.MODEL_PATH), exist_ok=True)
+    joblib.dump(model, Config.MODEL_PATH)
+    print(f"\n[SUCCESS] Model saved to {Config.MODEL_PATH}!")
 
 if __name__ == "__main__":
     train_pipeline()

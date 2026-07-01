@@ -3,14 +3,14 @@ from pydantic import BaseModel
 import joblib
 import numpy as np
 import os
+from app.config import Config
 
 app = FastAPI(title="Airport Operations Predictive Analytics API", version="1.0.0")
 
-MODEL_PATH = "saved_models/delay_model_v1.pkl"
-if not os.path.exists(MODEL_PATH):
-    raise RuntimeError(f"Model artifact not found at {MODEL_PATH}")
+if not os.path.exists(Config.MODEL_PATH):
+    raise RuntimeError(f"Model artifact not found at {Config.MODEL_PATH}")
 
-model = joblib.load(MODEL_PATH)
+model = joblib.load(Config.MODEL_PATH)
 
 class FlightFeatures(BaseModel):
     year: float
@@ -43,7 +43,6 @@ def read_root():
 @app.post("/predict")
 def predict_delay(payload: FlightFeatures):
     try:
-        # Convert the dictionary systematically to ensure correct feature ordering
         input_dict = payload.model_dump()
         ordered_features = [input_dict[col] for col in [
             "year", "month", "arr_flights", "is_summer", 
@@ -65,4 +64,4 @@ def predict_delay(payload: FlightFeatures):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host=Config.API_HOST, port=Config.API_PORT)
