@@ -1,0 +1,26 @@
+# Data files (too large for git)
+data/*.csv
+data/*.zip
+
+# Trained model binaries
+saved_models/*.pkl
+saved_models/*.joblib
+
+# Environment config (contains secrets)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
