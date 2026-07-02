@@ -1,3 +1,15 @@
+﻿"""
+app/services.py
+ML service layer — encapsulates all model loading and inference logic.
+Used by app/main.py as the single point of ML interaction.
+Refactor target: wire main.py endpoints to delegate to MLService instead of inline logic.
+"""
+"""
+app/services.py
+ML service layer — encapsulates all model loading and inference logic.
+Used by app/main.py as the single point of ML interaction.
+Refactor target: wire main.py endpoints to delegate to MLService instead of inline logic.
+"""
 import os
 import json
 import numpy as np
@@ -50,3 +62,5 @@ class MLService:
         return points
 
 ml_service = MLService()
+
+
