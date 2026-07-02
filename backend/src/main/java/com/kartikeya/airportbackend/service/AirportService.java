@@ -9,13 +9,12 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Core business logic service.
- * Orchestrates: ML service calls → persistence → response assembly.
- * Controllers stay thin — all logic lives here.
+ * Orchestrates: ML service calls ? persistence ? response assembly.
+ * Controllers stay thin � all logic lives here.
  */
 @Service
 @RequiredArgsConstructor
@@ -25,22 +24,16 @@ public class AirportService {
     private final MlServiceClient mlServiceClient;
     private final PredictionHistoryRepository predictionHistoryRepository;
 
-    // ── Delay Prediction ──────────────────────────────────────────────────────
+    // -- Delay Prediction ------------------------------------------------------
 
     public DelayPredictionResponse predictDelay(DelayPredictionRequest request) {
         log.info("Processing delay prediction for month={}, year={}",
                 request.getMonth().intValue(), request.getYear().intValue());
 
-        // 1. Call ML service
-        Map<String, Object> mlResponse = mlServiceClient.predictDelay(request);
+        // 1. Call ML service (returns strongly typed Record)
+        MlServiceClient.DelayPredictionResponse mlResponse = mlServiceClient.predictDelay(request);
 
-        // 2. Extract values safely
-        Integer prediction   = (Integer) mlResponse.get("high_delay_prediction");
-        Double  probability  = ((Number) mlResponse.get("high_delay_probability")).doubleValue();
-        String  status       = (String)  mlResponse.get("status");
-        String  modelVersion = (String)  mlResponse.get("model_version");
-
-        // 3. Persist to history
+        // 2. Persist to history using type-safe Record getters
         PredictionHistory history = PredictionHistory.builder()
                 .year(request.getYear().intValue())
                 .month(request.getMonth().intValue())
@@ -50,57 +43,55 @@ public class AirportService {
                 .yearsSince2013(request.getYearsSince2013())
                 .airportAvgDelayRate(request.getAirportAvgDelayRate())
                 .carrierAvgDelayRate(request.getCarrierAvgDelayRate())
-                .highDelayPrediction(prediction)
-                .highDelayProbability(probability)
-                .status(status)
-                .modelVersion(modelVersion != null ? modelVersion : "v1")
+                .highDelayPrediction(mlResponse.high_delay_prediction())
+                .highDelayProbability(mlResponse.high_delay_probability())
+                .status(mlResponse.status())
+                .modelVersion(mlResponse.model_version() != null ? mlResponse.model_version() : "v1")
                 .build();
 
         PredictionHistory saved = predictionHistoryRepository.save(history);
         log.info("Prediction saved to history with id={}", saved.getId());
 
-        // 4. Build and return response
+        // 3. Build and return response
         return DelayPredictionResponse.builder()
-                .highDelayPrediction(prediction)
-                .highDelayProbability(probability)
-                .status(status)
-                .modelVersion(modelVersion)
+                .highDelayPrediction(mlResponse.high_delay_prediction())
+                .highDelayProbability(mlResponse.high_delay_probability())
+                .status(mlResponse.status())
+                .modelVersion(mlResponse.model_version())
                 .predictedAt(LocalDateTime.now())
                 .historyId(saved.getId())
                 .build();
     }
 
-    // ── Traffic Forecasting ───────────────────────────────────────────────────
+    // -- Traffic Forecasting ---------------------------------------------------
 
-    @SuppressWarnings("unchecked")
     public TrafficForecastResponse forecastTraffic(int days) {
         log.info("Processing traffic forecast for {} days", days);
 
-        Map<String, Object> mlResponse = mlServiceClient.forecastTraffic(days);
+        // 1. Call ML service (returns strongly typed Record)
+        MlServiceClient.TrafficForecastResponse mlResponse = mlServiceClient.forecastTraffic(days);
 
-        List<Map<String, Object>> rawForecast =
-                (List<Map<String, Object>>) mlResponse.get("forecast");
-
-        List<TrafficForecastPoint> forecastPoints = rawForecast.stream()
+        // 2. Map the data cleanly without unsafe Map casting loops
+        List<TrafficForecastPoint> forecastPoints = mlResponse.forecast().stream()
                 .map(point -> TrafficForecastPoint.builder()
-                        .date((String) point.get("date"))
-                        .predictedFootfall(((Number) point.get("predicted_footfall")).intValue())
-                        .lowerBound(((Number) point.get("lower_bound")).intValue())
-                        .upperBound(((Number) point.get("upper_bound")).intValue())
+                        .date(point.date())
+                        .predictedFootfall(point.predicted_footfall())
+                        .lowerBound(point.lower_bound())
+                        .upperBound(point.upper_bound())
                         .build())
                 .collect(Collectors.toList());
 
         return TrafficForecastResponse.builder()
-                .forecastDays(((Number) mlResponse.get("forecast_days")).intValue())
-                .forecastFrom((String) mlResponse.get("forecast_from"))
-                .forecastTo((String) mlResponse.get("forecast_to"))
-                .modelMae(((Number) mlResponse.get("model_mae")).doubleValue())
-                .modelMapePct(((Number) mlResponse.get("model_mape_pct")).doubleValue())
+                .forecastDays(mlResponse.forecast_days())
+                .forecastFrom(mlResponse.forecast_from())
+                .forecastTo(mlResponse.forecast_to())
+                .modelMae(mlResponse.model_mae())
+                .modelMapePct(mlResponse.model_mape_pct())
                 .forecast(forecastPoints)
                 .build();
     }
 
-    // ── History & Dashboard ───────────────────────────────────────────────────
+    // -- History & Dashboard ---------------------------------------------------
 
     public List<PredictionHistoryItem> getRecentHistory() {
         return predictionHistoryRepository.findTop20ByOrderByCreatedAtDesc()
