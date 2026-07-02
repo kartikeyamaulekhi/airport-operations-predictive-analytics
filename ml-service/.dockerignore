@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environment (NEVER copy this into Docker — image has its own)
+venv/
+.venv/
+env/
+
+# Environment secrets
+.env
+
+# Large data files (mounted as volumes at runtime instead)
+data/*.csv
+data/*.zip
+
+# Trained model binaries (mounted as volumes at runtime instead)
+saved_models/*.pkl
+saved_models/*.joblib
+
+# EDA outputs (not needed in production)
+data/charts/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs (not needed in production image)
+*.md

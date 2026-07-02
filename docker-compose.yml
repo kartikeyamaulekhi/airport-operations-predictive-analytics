@@ -1,0 +1,113 @@
+version: "3.9"
+
+# ── Airport Operations Predictive Analytics — Local Development Stack ──────────
+# Runs all three services locally so you can test the full system before deploying.
+#
+# Usage:
+#   docker-compose up --build        # build and start everything
+#   docker-compose up ml-service     # start only the ML service
+#   docker-compose down              # stop everything
+#   docker-compose logs ml-service   # view logs for one service
+
+services:
+
+  # ── Python FastAPI ML Service ───────────────────────────────────────────────
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: airport-ml-service
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - MODEL_VERSION=v1
+      - MODEL_PATH=saved_models/delay_model_v1.pkl
+      - TRAFFIC_MODEL_PATH=saved_models/traffic_model_v1.pkl
+      - TRAFFIC_DATA_PATH=data/airport_traffic_data.csv
+      - DATA_PATH=data/flight_delay_clean.csv
+      - DELAY_THRESHOLD=0.20
+      - TRAFFIC_FORECAST_DAYS=30
+    volumes:
+      # Mount data and models as volumes so you don't need to rebuild
+      # the image every time you retrain a model
+      - ./ml-service/saved_models:/app/saved_models
+      - ./ml-service/data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - airport-network
+
+  # ── Java Spring Boot Backend ────────────────────────────────────────────────
+  # Uncomment this block after completing Phase 2B (Spring Boot development)
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: airport-backend
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - ML_SERVICE_URL=http://ml-service:8000
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/airportdb
+  #     - SPRING_DATASOURCE_USERNAME=airport_user
+  #     - SPRING_DATASOURCE_PASSWORD=airport_pass
+  #   depends_on:
+  #     ml-service:
+  #       condition: service_healthy
+  #     db:
+  #       condition: service_healthy
+  #   networks:
+  #     - airport-network
+
+  # ── PostgreSQL Database ─────────────────────────────────────────────────────
+  # Uncomment after Phase 2B
+  # db:
+  #   image: postgres:15-alpine
+  #   container_name: airport-db
+  #   environment:
+  #     - POSTGRES_DB=airportdb
+  #     - POSTGRES_USER=airport_user
+  #     - POSTGRES_PASSWORD=airport_pass
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U airport_user -d airportdb"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - airport-network
+
+  # ── React Dashboard ─────────────────────────────────────────────────────────
+  # Uncomment after Phase 2C
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: airport-dashboard
+  #   ports:
+  #     - "3000:80"
+  #   environment:
+  #     - REACT_APP_API_URL=http://localhost:8080
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - airport-network
+
+networks:
+  airport-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
