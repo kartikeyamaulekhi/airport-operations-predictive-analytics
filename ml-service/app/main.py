@@ -109,10 +109,7 @@ class FlightFeatures(BaseModel):
 
 
 class DelayPredictionResponse(BaseModel):
-    high_delay_prediction:  int
-    high_delay_probability: float
-    status:                 str
-    model_version:          str
+    model_config = {"protected_namespaces": ()}
 
 
 class TrafficForecastPoint(BaseModel):
@@ -123,12 +120,7 @@ class TrafficForecastPoint(BaseModel):
 
 
 class TrafficForecastResponse(BaseModel):
-    forecast_days:   int
-    forecast_from:   str
-    forecast_to:     str
-    model_mae:       float
-    model_mape_pct:  float
-    forecast:        list[TrafficForecastPoint]
+    model_config = {"protected_namespaces": ()}
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
