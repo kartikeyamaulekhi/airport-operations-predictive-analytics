@@ -1,10 +1,10 @@
-# Python
+﻿# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
 
-# Virtual environment (NEVER copy this into Docker — image has its own)
+# Virtual environment
 venv/
 .venv/
 env/
@@ -12,15 +12,11 @@ env/
 # Environment secrets
 .env
 
-# Large data files (mounted as volumes at runtime instead)
+# Large data files - NOT needed in production image
 data/*.csv
 data/*.zip
 
-# Trained model binaries (mounted as volumes at runtime instead)
-saved_models/*.pkl
-saved_models/*.joblib
-
-# EDA outputs (not needed in production)
+# EDA outputs
 data/charts/
 
 # Git
@@ -35,6 +31,3 @@ data/charts/
 # OS
 .DS_Store
 Thumbs.db
-
-# Docs (not needed in production image)
-*.md
