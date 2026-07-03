@@ -30,11 +30,16 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-COPY app/         ./app/
-COPY ml/          ./ml/
+COPY app/          ./app/
+COPY ml/           ./ml/
 COPY saved_models/ ./saved_models/
-COPY data/        ./data/
-COPY .env.example ./.env.example
+COPY data/         ./data/
+COPY .env.example  ./.env.example
+
+# DEBUG: print what actually landed in the container
+RUN echo "=== /app contents ===" && ls -la /app/ && \
+    echo "=== saved_models ===" && ls -la /app/saved_models/ && \
+    echo "=== data ===" && ls -la /app/data/
 
 RUN addgroup --system appgroup && \
     adduser --system --ingroup appgroup appuser && \
@@ -43,8 +48,4 @@ USER appuser
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
-
-# Use shell form so $PORT variable gets expanded by Render
 CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2 --timeout-keep-alive 30 --access-log
