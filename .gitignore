@@ -1,25 +1,34 @@
-﻿# Data files
-data/*.csv
-data/*.zip
-
-# Trained model binaries
-saved_models/*.pkl
-saved_models/*.joblib
-
-# Environment config
-.env
-ml-service/.env
-
-# Python
-__pycache__/
-*.py[cod]
+﻿# Python virtual environment
 venv/
 .venv/
+ml-service/venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Data files (too large)
+*.csv
+*.zip
+data/charts/
+
+# Trained model binaries
+*.pkl
+*.joblib
+
+# Environment secrets
+.env
+*.env
 
 # Frontend
+node_modules/
 frontend/node_modules/
+dist/
 frontend/dist/
-frontend/.env
+
+# Java build output
+backend/target/
 
 # OS
 .DS_Store
@@ -29,6 +38,3 @@ Thumbs.db
 .idea/
 .vscode/
 *.iml
-
-# Java
-backend/target/
