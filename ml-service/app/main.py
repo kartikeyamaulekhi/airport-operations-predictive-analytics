@@ -1,11 +1,23 @@
+import os
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+import uvicorn
+
 from app.config import Config
 from app.services import ml_service
 
 app = FastAPI(title="Airport Operations Predictive Analytics API", version="1.0.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- Pydantic Schemas ---
 
 class FlightFeatures(BaseModel):
     model_config = {
@@ -48,12 +60,19 @@ class TrafficForecastResponse(BaseModel):
     model_mape_pct: float
     forecast: list[TrafficForecastPoint]
 
+
+# --- Endpoints ---
+
 @app.get("/", tags=["Health"])
 def read_root():
     return {
         "status": "healthy", 
         "model_version": Config.MODEL_VERSION, 
-        "endpoints": {"delay_prediction": "POST /predict", "traffic_forecast": "GET /forecast/traffic", "api_docs": "GET /docs"}
+        "endpoints": {
+            "delay_prediction": "POST /predict", 
+            "traffic_forecast": "GET /forecast/traffic", 
+            "api_docs": "GET /docs"
+        }
     }
 
 @app.get("/health", tags=["Health"])
@@ -89,6 +108,9 @@ def predict_delay(payload: FlightFeatures):
 def forecast_traffic(days: int = Query(default=30, ge=1, le=365)):
     try:
         points = ml_service.run_traffic_forecast(days)
+        if not points:
+            raise HTTPException(status_code=444, detail="No forecast data returned.")
+            
         return TrafficForecastResponse(
             forecast_days=days,
             forecast_from=points[0]["date"],
@@ -100,12 +122,13 @@ def forecast_traffic(days: int = Query(default=30, ge=1, le=365)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Forecasting engine failed: {str(e)}")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host=Config.API_HOST, port=Config.API_PORT)
 
-import os
-import uvicorn
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    uvicorn.run('app.main:app', host='0.0.0.0', port=port)
+# --- Server Execution ---
+
+if __name__ == "__main__":
+    # Prioritize environment variables (useful for cloud deployments), fallback to Config class
+    host = os.environ.get("HOST", getattr(Config, "API_HOST", "0.0.0.0"))
+    port = int(os.environ.get("PORT", getattr(Config, "API_PORT", 8000)))
+    
+    # Using the string target enables hot-reloading if you decide to pass reload=True
+    uvicorn.run("app.main:app", host=host, port=port, reload=False)
