@@ -1,4 +1,4 @@
-﻿# Python virtual environment
+# Python virtual environment
 venv/
 .venv/
 ml-service/venv/
@@ -9,13 +9,10 @@ __pycache__/
 *.pyo
 
 # Data files (too large)
-*.csv
 *.zip
 data/charts/
 
 # Trained model binaries
-*.pkl
-*.joblib
 
 # Environment secrets
 .env
@@ -38,3 +35,5 @@ Thumbs.db
 .idea/
 .vscode/
 *.iml
+ml-service/data/Airline_Delay_Cause.csv
+ml-service/data/flight_delay_clean.csv
