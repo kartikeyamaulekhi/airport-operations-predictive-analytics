@@ -103,3 +103,9 @@ def forecast_traffic(days: int = Query(default=30, ge=1, le=365)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host=Config.API_HOST, port=Config.API_PORT)
+
+import os
+import uvicorn
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    uvicorn.run('app.main:app', host='0.0.0.0', port=port)
